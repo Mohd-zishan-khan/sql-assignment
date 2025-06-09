@@ -1,0 +1,387 @@
+
+-- ========================================ass 1===========================================
+-- 1
+SELECT DISTINCT
+    p.PARTY_ID,
+    per.FIRST_NAME,
+    per.LAST_NAME,
+    email_cm .INFO_STRING AS email, 
+    tn.CONTACT_NUMBER,
+    p.CREATED_DATE
+FROM Party AS p
+JOIN Person AS per ON p.PARTY_ID = per.PARTY_ID
+JOIN Party_Role AS pr ON pr.PARTY_ID = p.PARTY_ID AND pr.ROLE_TYPE_ID = 'CUSTOMER'
+LEFT JOIN Party_Contact_Mech pcm_email ON pcm_email.PARTY_ID = p.PARTY_ID
+LEFT JOIN Contact_Mech email_cm ON email_cm.CONTACT_MECH_ID = pcm_email.CONTACT_MECH_ID AND email_cm.CONTACT_MECH_TYPE_ID = 'EMAIL_ADDRESS'
+LEFT JOIN Party_Contact_Mech pcm_ph ON pcm_ph.PARTY_ID = p.PARTY_ID
+LEFT JOIN Contact_Mech phone_cm ON phone_cm.CONTACT_MECH_ID = pcm_ph.CONTACT_MECH_ID AND phone_cm.CONTACT_MECH_TYPE_ID = 'TELECOM_NUMBER'
+LEFT JOIN Telecom_Number tn ON tn.CONTACT_MECH_ID = phone_cm.CONTACT_MECH_ID
+WHERE
+    p.CREATED_DATE >= '2023-06-01 00:00:00.000';
+    
+
+
+select
+
+-- 2
+select p.PRODUCT_ID ,p.PRODUCT_TYPE_ID ,p.INTERNAL_NAME  
+from product p   
+left join product_type pt on p.PRODUCT_TYPE_ID =pt.PRODUCT_TYPE_ID
+where pt.IS_PHYSICAL ="Y";
+
+
+-- 3
+
+
+select p.PRODUCT_ID,p.INTERNAL_NAME ,p.PRODUCT_TYPE_ID ,gi.ID_VALUE 
+from product p
+left join good_identification gi  on p.PRODUCT_ID =gi.PRODUCT_ID
+where gi.GOOD_IDENTIFICATION_TYPE_ID ="ERP_ID";
+
+
+
+
+-- 4
+
+select p.PRODUCT_ID ,oi.EXTERNAL_ID as SHOPIFY_ID,p.PRODUCT_ID as HOTWAX_ID ,gi.ID_VALUE as NETSUIT_ID
+from order_item oi 
+left join product p  on oi.PRODUCT_ID =p.PRODUCT_ID
+left join good_identification gi  on gi.PRODUCT_ID =p.PRODUCT_ID
+where gi.GOOD_IDENTIFICATION_TYPE_ID ="ERP_ID";
+
+
+-- 5
+
+  select oi.PRODUCT_ID ,p.PRODUCT_TYPE_ID ,psc.PRODUCT_STORE_ID ,oi.QUANTITY,p.INTERNAL_NAME
+         ,oi.EXTERNAL_ID,oi.ORDER_ID,oi.ORDER_ITEM_SEQ_ID,oi.SHIP_GROUP_SEQ_ID,f.FACILITY_ID,f.FACILITY_TYPE_ID,oh.ORDER_HISTORY_ID  
+   from order_item oi 
+   left join product p on oi.PRODUCT_ID =p.PRODUCT_ID
+   left join product_store_catalog psc  on psc.PROD_CATALOG_ID =oi.PROD_CATALOG_ID
+   left join facility f  on f.PRODUCT_STORE_ID =psc.PRODUCT_STORE_ID
+   left join order_history oh on oh.ORDER_ID =oi.ORDER_ID;
+  
+--   7
+  
+  select oh.ORDER_ID,oh.GRAND_TOTAL,opp.PAYMENT_METHOD_TYPE_ID as payment_meth,gi.ID_VALUE as NETSUIT_ID
+  from order_header oh 
+  left join order_item oi on oh.ORDER_ID =oi.ORDER_ID
+  left join good_identification gi on gi.PRODUCT_ID =oi.PRODUCT_ID
+  left join order_payment_preference opp on oh.ORDER_ID =opp.ORDER_ID 
+  where gi.GOOD_IDENTIFICATION_TYPE_ID ="ERP_ID";
+  
+  
+  
+  
+--  8
+  
+
+select oh.ORDER_ID,oh.STATUS_ID,opp.STATUS_ID,ss.STATUS_ID  
+from order_header oh 
+left join order_payment_preference opp on opp.ORDER_ID =oh.ORDER_ID
+left join order_shipment os on os.ORDER_ID =oh.ORDER_ID
+left join shipment_status ss on ss.SHIPMENT_ID =os.SHIPMENT_ID
+where opp.status_id="PAYMENT_RECEIVED" and ss.shipment_status_id not in("SHIPMENT_DELIVERED");
+
+
+
+-- 9
+
+select HOUR(os.STATUS_DATETIME) as hours,count(ORDER_ID )
+from order_status os 
+where os.STATUS_ID ="ORDER_COMPLETED"
+group by hour(os.STATUS_DATETIME)
+order by hours ;
+
+
+-- 10
+
+
+SELECT  COUNT(*) AS total_orders,SUM(oh.GRAND_TOTAL) AS total_revenue
+FROM order_header oh
+LEFT JOIN order_item_ship_group oisg ON oisg.ORDER_ID = oh.ORDER_ID
+WHERE  
+    oh.SALES_CHANNEL_ENUM_ID = 'WEB_SALES_CHANNEL'
+    AND oisg.SHIPMENT_METHOD_TYPE_ID = 'STOREPICKUP'
+    AND YEAR(oh.ENTRY_DATE) = 2023;
+
+-- 11
+
+select os.CHANGE_REASON,count(oh.ORDER_ID )
+FROM order_header oh 
+left join order_status os on os.ORDER_ID = oh.ORDER_ID 
+where oh.STATUS_ID="ORDER_CANCELLED" AND MONTH(os.status_datetime) = 04
+    AND YEAR(os.status_datetime) = 2024
+group by os.CHANGE_REASON 
+order by  os.CHANGE_REASON; 
+    
+
+-- 12
+
+
+-- how to get threshold
+
+
+
+-- ======================================= ass2 ==============================================
+
+
+-- 1
+
+select oh.ORDER_ID,p.PARTY_ID,p.FIRST_NAME,p.LAST_NAME,pa.ADDRESS1,pa.CITY,pa.STATE_PROVINCE_GEO_ID,pa.POSTAL_CODE,pa.COUNTRY_GEO_ID,oh.STATUS_ID,oh.ORDER_DATE
+from order_header oh 
+left join order_role odr on odr.ORDER_ID = oh.ORDER_ID
+left join person p on p.PARTY_ID = odr.PARTY_ID
+left join order_contact_mech ocm on ocm.ORDER_ID =oh.ORDER_ID and ocm.CONTACT_MECH_PURPOSE_TYPE_ID ="SHIPPING_LOCATION"
+left join postal_address pa on pa.CONTACT_MECH_ID =ocm.CONTACT_MECH_ID
+where oh.STATUS_ID not in("ORDER_CANCELLED");
+
+
+
+-- 2
+
+select pa.CITY,oh.ORDER_ID,p.FIRST_NAME,p.LAST_NAME,oh.GRAND_TOTAL ,pa.ADDRESS1,pa.STATE_PROVINCE_GEO_ID,pa.POSTAL_CODE,pa.COUNTRY_GEO_ID,oh.STATUS_ID,oh.ORDER_DATE
+from order_header oh 
+left join order_role odr on odr.ORDER_ID = oh.ORDER_ID
+left join person p on p.PARTY_ID = odr.PARTY_ID
+left join order_contact_mech ocm on ocm.ORDER_ID =oh.ORDER_ID and ocm.CONTACT_MECH_PURPOSE_TYPE_ID ="SHIPPING_LOCATION"
+left join postal_address pa on pa.CONTACT_MECH_ID =ocm.CONTACT_MECH_ID
+where pa.CITY='NEW YORK'; 
+	
+
+-- 3
+
+select PRODUCT_ID ,sum(QUANTITY ),CITY ,sum(GRAND_TOTAL)
+from order_header oh 
+left join order_item oi on oh.ORDER_ID=oi.ORDER_ID
+left join order_contact_mech ocm on ocm.ORDER_ID =oh.ORDER_ID and ocm.CONTACT_MECH_PURPOSE_TYPE_ID ="SHIPPING_LOCATION"
+left join postal_address pa on pa.CONTACT_MECH_ID =ocm.CONTACT_MECH_ID
+where city="NEW YORK"
+group by PRODUCT_ID ;
+
+-- 4
+
+
+
+select f.FACILITY_ID ,FACILITY_NAME ,count(oi.ORDER_ITEM_SEQ_ID  ),sum(oi.UNIT_PRICE *oi.QUANTITY )
+from facility f
+left join order_item_ship_group oisg  on f.FACILITY_ID =oisg.FACILITY_ID
+left join order_item oi on oi.ORDER_ID =oisg.ORDER_ID
+left join order_header oh on oh.ORDER_ID =oi.ORDER_ID
+WHERE oh.ORDER_DATE BETWEEN '2024-01-01' AND '2024-1-31'
+group by FACILITY_ID;
+
+
+-- 5
+
+select  ii.INVENTORY_ITEM_ID ,PRODUCT_ID ,FACILITY_ID ,iid.REASON_ENUM_ID 
+from inventory_item ii 
+left join inventory_item_detail iid on iid.INVENTORY_ITEM_ID = ii.INVENTORY_ITEM_ID
+where iid.REASON_ENUM_ID in ('VAR_DAMAGED','VAR_LOST');
+
+-- quantity lost or damaaged
+
+
+
+-- 6
+
+select ii.PRODUCT_ID , p.PRODUCT_NAME,ii.FACILITY_ID,ii.QUANTITY_ON_HAND,ii.AVAILABLE_TO_PROMISE,pf.MINIMUM_STOCK ,CURRENT_DATE AS DATE_CHECKED 
+from inventory_item ii 
+left join product p on p.PRODUCT_ID =ii.PARTY_ID
+left join product_facility pf on pf.FACILITY_ID =ii.FACILITY_ID
+WHERE 
+    ii.QUANTITY_ON_HAND_TOTAL <= pf.REORDER_QUANTITY or ii.QUANTITY_ON_HAND_TOTAL <= 0
+    OR ii.AVAILABLE_TO_PROMISE_TOTAL <= 0;
+
+
+
+
+-- 7
+select oh.ORDER_ID ,oh.STATUS_ID,f.FACILITY_ID ,f.FACILITY_NAME,f.FACILITY_TYPE_ID
+from order_header oh 
+left join order_item_ship_group oisg on oisg.ORDER_ID = oh.ORDER_ID
+left join facility f on f.FACILITY_ID =oisg.FACILITY_ID
+where oh.STATUS_ID in('ORDER_CREATED', 'ORDER_APPROVED', 'ORDER_HELD') and f.FACILITY_ID !='_NA_';
+
+
+-- 8
+
+
+select ii.PRODUCT_ID,ii.FACILITY_ID,ii.QUANTITY_ON_HAND,ii.AVAILABLE_TO_PROMISE,(ii.QUANTITY_ON_HAND-ii.AVAILABLE_TO_PROMISE)as difference
+from inventory_item ii 
+where (ii.QUANTITY_ON_HAND-ii.AVAILABLE_TO_PROMISE)!=0;
+
+
+
+
+-- 9
+
+SELECT os.order_id, os.order_item_seq_id, os.status_id AS current_status_id, os.status_datetime AS status_change_datetime, os.status_user_login AS change_by
+FROM ORDER_STATUS AS os 
+WHERE os.order_item_seq_id IS NOT NULL;
+
+-- 10
+
+
+SELECT oh.sales_channel_enum_id AS sales_channel, count(oh.order_id) AS total_orders, sum(oh.grand_total) AS total_revenue, 
+        date_format(oh.order_date, '%m-%y') AS reporting_period
+FROM ORDER_HEADER AS oh
+WHERE oh.sales_channel_enum_id IS NOT NULL
+GROUP BY sales_channel, reporting_period;
+
+-- ========================================================ass 3 ======================================================
+
+
+
+--   1
+select oh.ORDER_ID ,oi.ORDER_ITEM_SEQ_ID ,p.PRODUCT_ID ,p.PRODUCT_TYPE_ID ,oh.SALES_CHANNEL_ENUM_ID
+       ,oh.ORDER_DATE,oh.ENTRY_DATE,os.STATUS_ID,os.STATUS_DATETIME ,oh.ORDER_TYPE_ID,oh.PRODUCT_STORE_ID 
+from order_item oi 
+left join order_header oh on oh.ORDER_ID=oi.ORDER_ID  
+left join product p on oi.PRODUCT_ID =p.PRODUCT_ID
+left join order_status os on os.ORDER_ID =oh.ORDER_ID
+where oi.ORDER_ITEM_SEQ_ID !='NULL'and os.STATUS_ID not in ('ITEM_COMPLETED','ITEM_CANCELLED','ORDER_CANCELLED','ORDER_COMPLETED') 
+      AND p.PRODUCT_TYPE_ID = 'FINISHED_GOOD';
+
+
+-- 2
+
+select ri.RETURN_ID,ri.ORDER_ID,oh.PRODUCT_STORE_ID ,rs.STATUS_DATETIME ,oh.ORDER_NAME,rh.FROM_PARTY_ID ,rh.RETURN_DATE ,rh.ENTRY_DATE ,rh.RETURN_CHANNEL_ENUM_ID
+from return_item ri 
+left join order_header oh on oh.ORDER_ID =ri.ORDER_ID
+left join return_status rs on rs.RETURN_ID =ri.RETURN_ID
+left join return_header rh  on rh.RETURN_ID =ri.RETURN_ID
+where rs.STATUS_ID ='RETURN_COMPLETED';
+-- for seeing channel is available or  not
+select * from return_header rh ; 
+
+
+
+
+-- 3
+
+select rh.FROM_PARTY_ID,p.FIRST_NAME
+from return_header rh 
+left join person p on p.PARTY_ID =rh.FROM_PARTY_ID
+where MONTH(rh.ENTRY_DATE ) = 03
+    AND year(rh.ENTRY_DATE) = 2024
+group by FROM_PARTY_ID 
+having COUNT(*)=1;
+
+-- 4
+
+select count(ri.RETURN_ID ) total_return_order,sum(ri.RETURN_PRICE) total_return_amount,count(ra.RETURN_ADJUSTMENT_ID),sum(ra.AMOUNT)
+from return_item ri 
+left join return_adjustment ra on ra.RETURN_ID =ri.RETURN_ID;
+
+
+
+
+-- 5
+
+select ra.RETURN_ID,date(rh.ENTRY_DATE) ,ra.RETURN_ADJUSTMENT_TYPE_ID,ri.RETURN_PRICE ,ri.ORDER_ID ,date(oh.ORDER_DATE) 
+       ,rh.RETURN_DATE,oh.PRODUCT_STORE_ID
+from return_header rh 
+left join return_adjustment ra on ra.RETURN_ID =rh.RETURN_ID
+left join return_item ri  on ri.RETURN_ID =rh.RETURN_ID
+left join order_header oh on oh.ORDER_ID =ri.ORDER_ID;
+
+
+-- 6
+
+select ri.ORDER_ID ,ri.RETURN_ID ,rh.RETURN_DATE,ri.RETURN_REASON_ID,ri.RETURN_QUANTITY
+from return_item ri 
+left join return_header rh on rh.RETURN_ID =ri.RETURN_ID
+WHERE 
+    ri.ORDER_ID IN (
+        SELECT ORDER_ID
+        FROM return_item
+        GROUP BY ORDER_ID
+        HAVING COUNT(*) > 1
+    );
+
+-- 7
+
+
+select f.FACILITY_ID,f.FACILITY_NAME,count(*)as total_next_day_del
+from facility f 
+left join picklist p on p.FACILITY_ID =f.FACILITY_ID
+where p.SHIPMENT_METHOD_TYPE_ID ="NEXT_DAY"
+group by f.FACILITY_ID;
+
+
+-- 8
+
+
+select p.PARTY_ID,concat(per.first_name,' ', per.last_name) as name,fgr.ROLE_TYPE_ID,fgm.FACILITY_ID,p.STATUS_ID
+from facility_group_role fgr 
+left join person per on fgr.PARTY_ID  =per.PARTY_ID
+left join facility_group_member fgm on fgr.FACILITY_GROUP_ID =fgm.FACILITY_GROUP_ID 
+left join party p  on p.PARTY_ID =per.PARTY_ID
+
+
+
+-- 9
+
+select p.PRODUCT_ID ,p.PRODUCT_NAME,count(ii.FACILITY_ID )
+from inventory_item ii 
+left join product p on p.PRODUCT_ID =ii.PRODUCT_ID 
+where ii.QUANTITY_ON_HAND_TOTAL >0
+group by ii.PRODUCT_ID ;
+
+
+-- 10
+
+SELECT ii.PRODUCT_ID,ii.FACILITY_ID,f.FACILITY_TYPE_ID,ii.QUANTITY_ON_HAND_TOTAL AS QOH,ii.AVAILABLE_TO_PROMISE_TOTAL AS ATP,
+    (ii.DATETIME_RECEIVED )
+FROM inventory_item ii
+left join facility f ON ii.FACILITY_ID = f.FACILITY_ID
+WHERE  f.FACILITY_TYPE_ID != 'VIRTUAL' 
+order by ii.PRODUCT_ID;
+
+
+
+-- 11
+
+SELECT 
+    it.INVENTORY_TRANSFER_ID AS transfer_order_id,
+    it.FACILITY_ID as from_facility_id,
+    it.FACILITY_ID_TO AS to_facility_id,
+    it.PRODUCT_ID,
+    it.QUANTITY ,
+    oisgir.QUANTITY as res_quantity,
+    it.SEND_DATE ,
+    it.STATUS_ID 
+FROM 
+    inventory_transfer it
+left join order_item_ship_grp_inv_res oisgir on oisgir.INVENTORY_ITEM_ID =it.INVENTORY_ITEM_ID    
+WHERE 
+    it.STATUS_ID NOT IN ('IX_CANCELLED', 'IX_COMPLETED')
+    AND (oisgir.QUANTITY IS NULL OR oisgir.QUANTITY < it.QUANTITY)
+ORDER BY 
+    it.send_DATE DESC;
+
+
+
+--12
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
