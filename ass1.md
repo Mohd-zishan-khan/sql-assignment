@@ -19,7 +19,7 @@ WHERE
     
 
 
-select
+
 
 -- 2
 select p.PRODUCT_ID ,p.PRODUCT_TYPE_ID ,p.INTERNAL_NAME  
