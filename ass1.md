@@ -1,3 +1,4 @@
+```sql
 -- 1
 SELECT DISTINCT
     p.PARTY_ID,
@@ -117,6 +118,8 @@ order by  os.CHANGE_REASON;
 select *
 FROM order_status os 
 where STATUS_ID ="ORDER_CANCELLED" and ORDER_ITEM_SEQ_ID !="NULL";
+
+```
 
 
 -- 12
