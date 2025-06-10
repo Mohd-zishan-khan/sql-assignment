@@ -1,4 +1,4 @@
-
+```sql
 --   1
 
 select oh.ORDER_ID ,oi.ORDER_ITEM_SEQ_ID ,p.PRODUCT_ID ,p.PRODUCT_TYPE_ID ,oh.SALES_CHANNEL_ENUM_ID
@@ -127,6 +127,8 @@ WHERE
     AND (oisgir.QUANTITY IS NULL OR oisgir.QUANTITY < it.QUANTITY)
 ORDER BY 
     it.send_DATE DESC;
+
+```
 
 
 
