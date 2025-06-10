@@ -1,4 +1,4 @@
-
+```sql
 -- 1
 
 select oh.ORDER_ID,p.PARTY_ID,p.FIRST_NAME,p.LAST_NAME,pa.ADDRESS1,pa.CITY,pa.STATE_PROVINCE_GEO_ID,pa.POSTAL_CODE,pa.COUNTRY_GEO_ID,oh.STATUS_ID,oh.ORDER_DATE
@@ -98,6 +98,7 @@ FROM ORDER_HEADER AS oh
 WHERE oh.sales_channel_enum_id IS NOT NULL
 GROUP BY sales_channel, reporting_period;
 
+```
 
 
 
